@@ -1,2 +1,2 @@
 # Anova-beta
-ANOVA for weed control experiments
+ANOVA for weed control experiments 
