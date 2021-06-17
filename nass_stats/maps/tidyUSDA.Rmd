@@ -1,0 +1,250 @@
+---
+title: "tidy_USDA"
+author: "Maxwel Coura Oliveira"
+date: "4/30/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(tidyUSDA)
+library(plotly)
+library(tidyverse)
+```
+
+
+
+
+
+```{r}
+vignette("using_tidyusda")
+#https://quickstats.nass.usda.gov/
+```
+
+```{r}
+key <- '7B8DE5D4-8393-3BF2-AAE3-A578DADE4D38'
+```
+
+
+
+```{r}
+us_map_data <- map_data("county") %>% 
+  rename(state_name = region,
+         county = subregion)
+```
+
+
+```{r cotton}
+# Get count of operations with sales in 2017
+cotton_state <- tidyUSDA::getQuickstat(
+  key = key,
+  program = 'SURVEY',
+  sector= 'CROPS',
+  group= 'FIELD CROPS',
+  commodity= 'COTTON',
+  category= 'YIELD',
+  domain= 'TOTAL',
+  data_item = NULL,
+  geographic_level = 'COUNTY',
+  year = NULL,
+  state = 'ARIZONA',
+  county= NULL,
+  geometry = TRUE,
+  lower48 = TRUE, 
+  weighted_by_area = TRUE)
+cotton_state 
+```
+
+
+```{r}
+cotton_state %>% as_tibble() -> cotton_az
+```
+
+
+```{r}
+cotton_az %>% 
+  filter(short_desc %in% c("COTTON, PIMA - YIELD, MEASURED IN LB / ACRE", "COTTON, UPLAND - YIELD, MEASURED IN LB / ACRE")) %>% 
+  mutate(short_desc = fct_recode(short_desc,
+                                 "Pima" = "COTTON, PIMA - YIELD, MEASURED IN LB / ACRE",
+                                 "Upland" = "COTTON, UPLAND - YIELD, MEASURED IN LB / ACRE")) %>% 
+  rename(type = short_desc) %>% 
+  ggplot(aes(x = year, y = Value, color = type)) +
+  geom_point(alpha = 0.2) +
+  scale_color_brewer(name = NULL, palette = "Set1") +
+  labs(title = "Cotton in Arizona", 
+       y = "Cotton yield (LB/acre)", 
+       x = NULL,
+       caption = "Source: USDA quick stats") +
+  geom_smooth(size = 1.5, method = "lm", se = FALSE) +
+  theme_bw() +
+  theme(legend.position = "bottom") +
+  scale_x_continuous(limits = c(1930, 2020), breaks = c(1930, 1960, 1990, 2020)) -> g
+ggplotly(g) %>% 
+  layout(legend = list(orientation = 'h'))
+```
+
+
+```{r cotton}
+# Get count of operations with sales in 2017
+cotton_state19 <- tidyUSDA::getQuickstat(
+  key = key,
+  program = 'SURVEY',
+  sector= 'CROPS',
+  group= 'FIELD CROPS',
+  commodity= 'COTTON',
+  category= 'YIELD',
+  domain= 'TOTAL',
+  data_item = NULL,
+  geographic_level = 'COUNTY',
+  year = "2020",
+  state = 'ARIZONA',
+  county= NULL,
+  geometry = TRUE,
+  lower48 = TRUE, 
+  weighted_by_area = TRUE)
+cotton_state19
+```
+
+```{r}
+ggplot(data = cotton_state19, fill = Value) +
+    geom_sf()
+```
+
+
+
+```{r}
+counties <- map_data("county")
+county <- subset(counties, region =="arizona") 
+county 
+```
+
+
+```{r}
+az_cotton %>% 
+  ggplot(aes(x = intptlat, y = intptlon, fill = value)) +
+  geom_polygon(data = county, aes(group=subregion))
+```
+
+
+
+```{r}
+az_cotton <- cotton_state19 %>% 
+  as_tibble() %>% 
+  janitor::clean_names() %>% 
+  mutate_all(str_to_lower) %>% 
+  mutate_at(c("intptlat", "intptlon"),  as.double)
+
+az_cotton
+```
+
+```{r}
+az_cotton %>% 
+  ggplot(aes(x = intptlat, y = intptlon, fill = value, group = geometry)) +
+  geom_polygon()
+```
+
+
+
+```{r}
+# Plot this data for each state
+tidyUSDA::plotUSDA(df = cotton_state)
+```
+
+
+
+```{r corn}
+# Get count of operations with sales in 2017
+corn_state <- tidyUSDA::getQuickstat(
+  key = key,
+  program = 'SURVEY',
+  sector= 'CROPS',
+  group= 'FIELD CROPS',
+  commodity= 'CORN',
+  category= 'YIELD',
+  domain= 'TOTAL',
+  county= NULL,
+  data_item = 'CORN, GRAIN - YIELD, MEASURED IN BU / ACRE',
+  geographic_level = 'COUNTY',
+  year = '2020',
+  state = 'IOWA',
+  geometry = TRUE,
+  lower48 = TRUE, 
+  weighted_by_area = T)
+corn_state
+```
+
+```{r}
+# Get count of operations with sales in 2017
+corn_state <- tidyUSDA::getQuickstat(
+  key = key,
+  program = 'SURVEY',
+  sector= 'CROPS',
+  group= 'FIELD CROPS',
+  commodity= 'CORN',
+  category= 'YIELD',
+  domain= 'TOTAL',
+  county= NULL,
+  data_item = 'CORN, GRAIN - YIELD, MEASURED IN BU / ACRE',
+  geographic_level = 'COUNTY',
+  year = '2020',
+  state = NULL,
+  geometry = TRUE,
+  lower48 = TRUE, 
+  weighted_by_area = T)
+corn_state
+```
+
+
+
+```{r}
+corn_state %>% as_tibble() %>% 
+  filter(state_name == "NEBRASKA")
+```
+
+
+```{r}
+# Plot this data for each state
+tidyUSDA::plotUSDA(df = corn_state)
+```
+
+
+
+```{r}
+# Get count of operations with sales in 2017
+ops.with.sales <- tidyUSDA::getQuickstat(
+  sector=NULL,
+  group=NULL,
+  commodity=NULL,
+  category=NULL,
+  domain='TOTAL',
+  county=NULL,
+  key = key,
+  program = 'CENSUS',
+  data_item = 'CROP TOTALS - OPERATIONS WITH SALES',
+  geographic_level = 'STATE',
+  year = '2017',
+  state = NULL,
+  geometry = TRUE,
+  lower48 = TRUE, 
+  weighted_by_area = T)
+```
+
+```{r}
+ops.with.sales %>% as_tibble()
+```
+
+
+```{r}
+# Plot this data for each state
+tidyUSDA::plotUSDA(df = ops.with.sales)
+```
+
+```{r}
+tidyUSDA::plotUSDA(df = ops.with.sales, fill_by = 'value_per_sq_mile')
+```
+
+

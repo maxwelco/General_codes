@@ -1,0 +1,46 @@
+---
+title: "beta"
+author: "Maxwel Coura Oliveira"
+date: "5/31/2021"
+output: html_document
+---
+
+
+
+
+```{r}
+library(tidyverse)
+library(RCurl)
+```
+
+
+```{r}
+df_path <- url("https://raw.githubusercontent.com/openweedsci/data/master/posts/control.csv")
+
+weedcont <- read_csv(df_path)
+```
+
+
+
+```{r}
+model <- brm(control ~ herbicide + (1|rep), 
+             control = list(adapt_delta = 0.99),
+             family = zero_inflated_beta(link = "logit", 
+                                    link_phi = "log", 
+                                    link_zi = "logit"), 
+             prior = set_prior("normal(0, 2)", class = "b"),
+                 data=weedcont)
+```
+
+
+
+```{r}
+emmeans(model, ~ herbicide, type = "response")
+```
+
+
+```{r}
+library(modelbased)
+estimate_contrasts(model, test = "bf")
+```
+

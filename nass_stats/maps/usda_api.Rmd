@@ -1,0 +1,81 @@
+---
+title: "usda"
+author: "Maxwel Coura Oliveira"
+date: "4/30/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(httr)
+```
+
+
+```{r}
+gov_api_json <- function(endpoint, queries = list()) {
+  
+  # Preparing the URL 
+  url <- modify_url("http://quickstats.nass.usda.gov", path = endpoint) # CHANGE: the base URL changed
+  
+  # API requests
+  response <- GET(url, query = queries)
+  
+  # Tracking errors
+  if ( http_error(response) ){
+    print(status_code(response))
+    stop("Something went wrong.", call. = FALSE)
+  }
+  
+  if (http_type(response) != "application/json") {
+    stop("API did not return json", call. = FALSE)
+  }
+  
+  # Extracting content
+  json_text <- content(response, "text")
+  
+  # Return the dataframe
+  dataframe <- jsonlite::fromJSON(json_text)
+  
+  # Return the dataframe  
+  dataframe
+}
+```
+
+
+```{r}
+agriculture_categories <-
+  gov_api_json("/api/api_GET/",
+               queries = list(api_key = "xgzXSIF0xnPNApWTYUOeVdDf0fphUdbwYdLYfkUQ",
+                              commodity_desc = "CORN", year__GE = 2012))
+```
+
+```{r}
+GET("http://quickstats.nass.usda.gov/api/api_GET/?key=api key=xgzXSIF0xnPNApWTYUOeVdDf0fphUdbwYdLYfkUQ&commodity_desc=CORN&year__GE=2012&state_alpha=VA&format=JSON")
+```
+
+
+
+
+```{r}
+library(tidyverse)
+```
+
+
+```{r}
+data <- read_tsv("data.txt")
+```
+
+```{r}
+data %>% 
+  distinct(COUNTY_ANSI)
+```
+
+
+
+
+
+
+
